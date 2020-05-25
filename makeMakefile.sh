@@ -1,4 +1,4 @@
-base_dir="`pwd`/`dirname $0`/../"
+base_dir="`pwd`/`dirname $0`/"
 make_file="$base_dir/Makefile"
 build_folder="build/objects"
 executable_folder="build"
