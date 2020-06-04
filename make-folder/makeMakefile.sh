@@ -1,7 +1,14 @@
 base_dir="`pwd`/`dirname $0`/"
+
+# edit your build folder if you want
+build_folder="../build"
+# choose one or more search paths for headers and source
+search_paths="./ ../include ../src"
+# choose where to place the executable
+executable_folder="./"
+
 make_file="$base_dir/Makefile"
-build_folder="build/objects"
-executable_folder="build"
+object_folder="$build_folder/objects"
 pushd $base_dir
 
 function pf () { printf "$1" >> Makefile; }
@@ -16,13 +23,13 @@ cat /dev/null > h-file.list        # file name only
 cat /dev/null > h-full.list        # full path
 
 # .hpp files only
-for f in `find ./ -name "*.hpp"`; do
+for f in `find $search_paths -name "*.hpp"`; do
 	echo "$f" >> hpp-full.list
 	echo "`basename $f | awk -F '.' '{print $1}'`" >> hpp-file.list
 	echo `dirname $f` >> header-dir.list
 done
 # .h files only
-for f in `find ./ -name "*.h"`; do
+for f in `find $search_paths -name "*.h"`; do
 	echo "$f" >> h-full.list
 	echo "`basename $f | awk -F '.' '{print $1}'`" >> h-file.list
 	echo `dirname $f` >> header-dir.list
@@ -36,12 +43,12 @@ cat /dev/null > cpp-full.list      # full path
 cat /dev/null > c-file.list      # file name only
 cat /dev/null > c-full.list      # full path
 # .cpp only
-for f in `find ./ -name "*.cpp"`; do
+for f in `find $search_paths -name "*.cpp"`; do
 	echo "$f" >> cpp-full.list
 	echo "`basename $f | awk -F '.' '{print $1}'`" >> cpp-file.list
 done
 # .c only
-for f in `find ./ -name "*.c"`; do
+for f in `find $search_paths -name "*.c"`; do
 	echo "$f" >> c-full.list
 	echo "`basename $f | awk -F '.' '{print $1}'`" >> c-file.list
 done
@@ -62,7 +69,7 @@ pf "\nall: check-directory"
 pf "\n"
 
 pf "\ncheck-directory:"
-pf "\n\t@[ -d \"$build_folder\" ] || mkdir -p $build_folder"
+pf "\n\t@[ -d \"$object_folder\" ] || mkdir -p $object_folder"
 pf "\n\t@[ -d \"$executable_folder\" ] || mkdir -p $executable_folder"
 pf "\n\t@make SHELL=/bin/bash check-opt-value OPT=\$(OPT)"
 pf "\n"
@@ -71,10 +78,10 @@ pf "\ncheck-opt-value:"
 pf "\n\t@[ \"\$(OPT)\" == \"\" ] && make SHELL=/bin/bash make-opt OPT=0 || make SHELL=/bin/bash make-opt OPT=\$(OPT)\n"
 
 pf "\nmake-opt:"
-pf "\n\t@if [ ! -f \"$executable_folder/.out-\$(OPT)\" ]; then \\"
-pf "\n\t\trm -rf $executable_folder/*; \\"
-pf "\n\t\tmkdir -p $build_folder; \\"
-pf "\n\t\ttouch $executable_folder/.out-\$(OPT); \\"
+pf "\n\t@if [ ! -f \"$build_folder/.out-\$(OPT)\" ]; then \\"
+pf "\n\t\trm -rf $build_folder/*; \\"
+pf "\n\t\tmkdir -p $object_folder; \\"
+pf "\n\t\ttouch $build_folder/.out-\$(OPT); \\"
 pf "\n\tfi"
 pf "\n\t@make SHELL=/bin/bash $executable_folder/prj-out-\$(OPT) OPT=\$(OPT)"
 pf "\n"
@@ -82,10 +89,10 @@ pf "\n"
 # project executable
 pf "\n$executable_folder/prj-out-\$(OPT):"
 while read -r file_name; do
-	pf " $build_folder/$file_name.o"
+	pf " $object_folder/$file_name.o"
 done < cpp-file.list
 while read -r file_name; do
-	pf " $build_folder/$file_name.o"
+	pf " $object_folder/$file_name.o"
 done < c-file.list
 pf "\n\t\$(CPPC) \$(INC) -o \$@ \$^"
 pf "\n"
@@ -96,22 +103,22 @@ while read -r cpp_full_path; do
 
 	cpp_file_name="`echo $(basename $cpp_full_path) | awk -F '.' '{print $1}'`"
 	cpp_dir_name="`dirname $cpp_full_path`"
-	pf "\n$build_folder/$cpp_file_name.o: $cpp_dir_name/$cpp_file_name.cpp "
+	pf "\n$object_folder/$cpp_file_name.o: $cpp_dir_name/$cpp_file_name.cpp "
 
 	# find all the included libraries in the cpp file
 	includes=`grep "^#include" "$cpp_full_path" | grep -v "<" | awk -F '"' '{print $2}'`
 	for hpp_file in ${includes[@]}; do
-		pf "`find ./ -name $hpp_file` "
+		pf "`find $search_paths -name $hpp_file` "
 	done
 	# find all the included libraries in the hpp file
-	hpp_full_path="`find ./ -name "$cpp_file_name.hpp"`"
+	hpp_full_path="`find $search_paths -name "$cpp_file_name.hpp"`"
 	# if the hpp file exists, look for dependencies in the hpp file as well
 	if [ "$hpp_full_path" != "" ]; then
 		hpp_dep=`grep "^#include" "$hpp_full_path" | grep -v "<" | awk -F '"' '{print $2}' | awk -F '.hpp' '{print $1}'`
 		for hpp_file in ${hpp_dep[@]}; do
 			# echo $hpp_file); exit
-			cpp_dep=`find ./ -name "$(basename $hpp_file).cpp"`
-			[ "$cpp_dep" != "" ] && echo $build_folder/$hpp_file.o && pf "$build_folder/$hpp_file.o "
+			cpp_dep=`find $search_paths -name "$(basename $hpp_file).cpp"`
+			[ "$cpp_dep" != "" ] && echo $object_folder/$hpp_file.o && pf "$object_folder/$hpp_file.o "
 		done
 	else
 		echo "No headers in $cpp_file_name.hpp"
@@ -126,22 +133,22 @@ while read -r c_full_path; do
 
 	c_file_name="`echo $(basename $c_full_path) | awk -F '.' '{print $1}'`"
 	c_dir_name="`dirname $c_full_path`"
-	pf "\n$build_folder/$c_file_name.o: $c_dir_name/$c_file_name.c "
+	pf "\n$object_folder/$c_file_name.o: $c_dir_name/$c_file_name.c "
 
 	# find all the included libraries in the .c file
 	includes=`grep "^#include" "$c_full_path" | grep -v "<" | awk -F '"' '{print $2}'`
 	for h_file in ${includes[@]}; do
-		pf "`find ./ -name $h_file` "
+		pf "`find $search_paths -name $h_file` "
 	done
 	# find all the included libraries in the .h file
-	h_full_path="`find ./ -name "$c_file_name.h"`"
+	h_full_path="`find $search_paths -name "$c_file_name.h"`"
 	# if the .h file exists, look for dependencies in the .h file as well
 	if [ "$h_full_path" != "" ]; then
 		h_dep=`grep "^#include" "$h_full_path" | grep -v "<" | awk -F '"' '{print $2}' | awk -F '.h' '{print $1}'`
 		for h_file in ${h_dep[@]}; do
 			# echo $h_file); exit
-			c_dep=`find ./ -name "$(basename $h_file).c"`
-			[ "$c_dep" != "" ] && echo $build_folder/$h_file.o && pf "$build_folder/$h_file.o "
+			c_dep=`find $search_paths -name "$(basename $h_file).c"`
+			[ "$c_dep" != "" ] && echo $object_folder/$h_file.o && pf "$object_folder/$h_file.o "
 		done
 	else
 		echo "No headers in $c_file_name.h"
@@ -151,7 +158,7 @@ while read -r c_full_path; do
 done < c-full.list
 
 
-pf "\nclean:\n\trm -rf $executable_folder\n"
+pf "\nclean:\n\trm -rf $build_folder $executable_folder/prj-out-*\n"
 
 rm *.list
 
