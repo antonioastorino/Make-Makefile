@@ -1,11 +1,13 @@
 base_dir="`pwd`/`dirname $0`/"
 
+# executable file name
+target_name="prj-out"
 # edit your build folder if you want
 build_folder="../build"
 # choose one or more search paths for headers and source
 search_paths="./ ../include ../src"
 # choose where to place the executable
-executable_folder="./"
+target_folder="./"
 
 make_file="$base_dir/Makefile"
 object_folder="$build_folder/objects"
@@ -70,7 +72,7 @@ pf "\n"
 
 pf "\ncheck-directory:"
 pf "\n\t@[ -d \"$object_folder\" ] || mkdir -p $object_folder"
-pf "\n\t@[ -d \"$executable_folder\" ] || mkdir -p $executable_folder"
+pf "\n\t@[ -d \"$target_folder\" ] || mkdir -p $target_folder"
 pf "\n\t@make SHELL=/bin/bash check-opt-value OPT=\$(OPT)"
 pf "\n"
 
@@ -83,11 +85,11 @@ pf "\n\t\trm -rf $build_folder/*; \\"
 pf "\n\t\tmkdir -p $object_folder; \\"
 pf "\n\t\ttouch $build_folder/.out-\$(OPT); \\"
 pf "\n\tfi"
-pf "\n\t@make SHELL=/bin/bash $executable_folder/prj-out-\$(OPT) OPT=\$(OPT)"
+pf "\n\t@make SHELL=/bin/bash $target_folder/$target_name-\$(OPT) OPT=\$(OPT)"
 pf "\n"
 
 # project executable
-pf "\n$executable_folder/prj-out-\$(OPT):"
+pf "\n$target_folder/$target_name-\$(OPT):"
 while read -r file_name; do
 	pf " $object_folder/$file_name.o"
 done < cpp-file.list
@@ -158,7 +160,7 @@ while read -r c_full_path; do
 done < c-full.list
 
 
-pf "\nclean:\n\trm -rf $build_folder $executable_folder/prj-out-*\n"
+pf "\nclean:\n\trm -rf $build_folder $target_folder/$target_name-*\n"
 
 rm *.list
 
