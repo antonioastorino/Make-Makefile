@@ -2,12 +2,12 @@ base_dir="`pwd`/`dirname $0`/"
 
 # executable file name
 target_name="prj-out"
+# choose where to place the executable
+target_folder="./"
 # edit your build folder if you want
 build_folder="../build"
 # choose one or more search paths for headers and source
 search_paths="./ ../include ../src"
-# choose where to place the executable
-target_folder="./"
 
 make_file="$base_dir/Makefile"
 object_folder="$build_folder/objects"
