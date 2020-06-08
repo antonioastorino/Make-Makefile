@@ -55,10 +55,24 @@ for f in `find $search_paths -name "*.c"`; do
 	echo "`basename $f | awk -F '.' '{print $1}'`" >> c-file.list
 done
 
+# find system libs which may need to be linked
+sys_libs=`grep -rh "#include" $(echo "$search_paths") 2>/dev/null | grep -v Binary | grep -o "<.*>" | sed 's/<//' | sed 's/>//' | sort | uniq`
+echo $sys_libs
+# select those who actually need to be linked and create LDLIBS list
+for l in ${sys_libs[@]}; do
+# TODO: add more cases as we go (for Ubuntu)
+	case $l in
+		thread)
+		LDLIBS="$LDLIBS -pthread"
+		;;
+	esac
+done
+
 pf "\nCPPFLAGS=-c -Wextra -std=c++14 -O\$(OPT) -g"
 pf "\nCFLAGS=-c -Wextra -O\$(OPT) -g"
 pf "\nCPPC=g++"
 pf "\nCC=gcc"
+[ "$LDLIBS" != "" ] && pf "\nLDLIBS=$LDLIBS" # LDLIBS added if not empty
 pf "\nINC="
 while read -r folder; do       # created -I list
 	pf " -I$folder\\"
@@ -96,7 +110,7 @@ done < cpp-file.list
 while read -r file_name; do
 	pf " $object_folder/$file_name.o"
 done < c-file.list
-pf "\n\t\$(CPPC) \$(INC) -o \$@ \$^"
+pf "\n\t\$(CPPC) \$(LDLIBS) \$(INC) -o \$@ \$^"
 pf "\n"
 
 echo "Adding cpp-related dependency list"
