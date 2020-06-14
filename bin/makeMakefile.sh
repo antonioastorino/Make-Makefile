@@ -7,7 +7,7 @@ bd="`pwd`/`dirname $0`/"        # The base directory: where this script is locat
 target_name="prj-out"                          # executable file name
 target_folder="$bd/.."                         # executable location
 makefile_folder="$bd/../"                      # Makefile location
-build_folder="$bd/../build"                       # build folder location
+build_folder="$bd/../build"                    # build folder location
 search_paths="$bd $bd/../include $bd/../src"   # paths for header and source files
 
 
