@@ -1,19 +1,24 @@
-base_dir="`pwd`/`dirname $0`/"
+bd="`pwd`/`dirname $0`/"        # The base directory: where this script is located
+                                # Use it as a prefix to all the paths to ensure they are all absolute
 
-# executable file name
-target_name="prj-out"
-# choose where to place the executable
-target_folder="./"
-# edit your build folder if you want
-build_folder="../build"
-# choose one or more search paths for headers and source
-search_paths="./ ../include ../src"
+##########################
+# customizable variables #
+##########################
+target_name="prj-out"                          # executable file name
+target_folder="$bd/.."                         # executable location
+makefile_folder="$bd/../"                      # Makefile location
+build_folder="$bd/../build"                       # build folder location
+search_paths="$bd $bd/../include $bd/../src"   # paths for header and source files
 
-make_file="$base_dir/Makefile"
+
+######################
+# don't change below #
+######################
+make_file="$makefile_folder/Makefile"
 object_folder="$build_folder/objects"
-pushd $base_dir
+pushd "$bd"
 
-function pf () { printf "$1" >> Makefile; }
+function pf () { printf "$1" >> "$make_file"; }
 
 echo "# Makefile auto generated using custom generator" > "$make_file" # Initialize Makefile
 
