@@ -97,7 +97,7 @@ Hello from C!
 To cleanup, run
 
 ```
-make clean         # delete Makefile products
+make clean         # delete Makefile artifacts
 ```
 
 
