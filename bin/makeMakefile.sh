@@ -1,5 +1,6 @@
 bd="`pwd`/`dirname $0`/"        # The base directory: where this script is located
                                 # Use it as a prefix to all the paths to ensure they are all absolute
+set -e
 
 ##########################
 # customizable variables #
@@ -24,21 +25,14 @@ echo "# Makefile auto generated using custom generator" > "$make_file" # Initial
 
 # Find all the directories containing header files
 cat /dev/null > header-dir.list    # dir only (combined .hpp and .h locations)
-cat /dev/null > hpp-file.list      # file name only
-cat /dev/null > hpp-full.list      # full path
-cat /dev/null > h-file.list        # file name only
-cat /dev/null > h-full.list        # full path
 
 # .hpp files only
 for f in `find $search_paths -name "*.hpp"`; do
 	echo "$f" >> hpp-full.list
-	echo "`basename $f | awk -F '.' '{print $1}'`" >> hpp-file.list
 	echo `dirname $f` >> header-dir.list
 done
 # .h files only
 for f in `find $search_paths -name "*.h"`; do
-	echo "$f" >> h-full.list
-	echo "`basename $f | awk -F '.' '{print $1}'`" >> h-file.list
 	echo `dirname $f` >> header-dir.list
 done
 # Remove duplicates from directory list
@@ -48,7 +42,7 @@ sort header-dir.list | uniq > header-sorted-dir.list
 cat /dev/null > cpp-file.list      # file name only
 cat /dev/null > cpp-full.list      # full path
 cat /dev/null > c-file.list      # file name only
-cat /dev/null > c-full.list      # full path
+
 # .cpp only
 for f in `find $search_paths -name "*.cpp"`; do
 	echo "$f" >> cpp-full.list

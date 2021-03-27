@@ -1,5 +1,5 @@
 build
-.vscode
 .clang-format
 prj-out-*
 Makefile
+.DS_Store
