@@ -75,7 +75,7 @@ pf "\nBD=$BD"
 [ "$LDLIBS" != "" ] && pf "\nLDLIBS=$LDLIBS" # LDLIBS added if not empty
 pf "\nINC="
 while read -r folder; do       # created -I list
-	pf " -I\$(BD)$folder\\"
+	pf " -I\$(BD)$folder \\"
 	pf "\n"
 done < header-sorted-dir.list
 
@@ -105,10 +105,12 @@ pf "\n"
 # project executable
 pf "\n\$(BD)$target_folder/$target_name-\$(OPT):"
 while read -r file_name; do
-	pf " \$(BD)$object_folder/$file_name.o"
+	pf "\\"
+	pf "\n\t\$(BD)$object_folder/$file_name.o "
 done < cpp-file.list
 while read -r file_name; do
-	pf " \$(BD)$object_folder/$file_name.o"
+	pf "\\"
+	pf "\n\t\$(BD)$object_folder/$file_name.o "
 done < c-file.list
 pf "\n\t\$(CPPC) \$(LDLIBS) \$(INC) -o \$@ \$^"
 pf "\n"
@@ -124,7 +126,8 @@ while read -r cpp_full_path; do
 	# find all the included libraries in the cpp file
 	includes=`grep "^#include" "$cpp_full_path" | grep -v "<" | awk -F '"' '{print $2}'`
 	for hpp_file in ${includes[@]}; do
-		pf "\$(BD)`find $search_paths -name $hpp_file` "
+		pf "\\"
+	pf "\n\t\$(BD)`find $search_paths -name $hpp_file` "
 	done
 	# find all the included libraries in the hpp file
 	hpp_full_path="`find $search_paths -name "$cpp_file_name.hpp"`"
@@ -134,10 +137,8 @@ while read -r cpp_full_path; do
 		for hpp_file in ${hpp_dep[@]}; do
 			# echo $hpp_file); exit
 			cpp_dep=`find $search_paths -name "$(basename $hpp_file).cpp"`
-			[ "$cpp_dep" != "" ] && echo "\$(BD)$object_folder/$hpp_file.o" && pf "\$(BD)$object_folder/$hpp_file.o "
+			[ "$cpp_dep" != "" ] && pf "\\" && pf "\n\t\$(BD)$object_folder/$hpp_file.o "
 		done
-	else
-		echo "No headers in $cpp_file_name.hpp"
 	fi
 
 	pf "\n\t\$(CPPC) \$(INC) \$(CPPFLAGS) \$< -o \$@\n"
@@ -154,7 +155,8 @@ while read -r c_full_path; do
 	# find all the included libraries in the .c file
 	includes=`grep "^#include" "$c_full_path" | grep -v "<" | awk -F '"' '{print $2}'`
 	for h_file in ${includes[@]}; do
-		pf "\$(BD)`find $search_paths -name $h_file` "
+		pf "\\"
+	pf "\n\t\$(BD)`find $search_paths -name $h_file` "
 	done
 	# find all the included libraries in the .h file
 	h_full_path="`find $search_paths -name "$c_file_name.h"`"
@@ -164,10 +166,8 @@ while read -r c_full_path; do
 		for h_file in ${h_dep[@]}; do
 			# echo $h_file); exit
 			c_dep=`find $search_paths -name "$(basename $h_file).c"`
-			[ "$c_dep" != "" ] && echo "\$(BD)$object_folder/$h_file.o" && pf "\$(BD)$object_folder/$h_file.o "
+			[ "$c_dep" != "" ] && pf "\\" && pf "\n\t\$(BD)$object_folder/$h_file.o "
 		done
-	else
-		echo "No headers in $c_file_name.h"
 	fi
 
 	pf "\n\t\$(CC) \$(INC) \$(CFLAGS) \$< -o \$@\n"
