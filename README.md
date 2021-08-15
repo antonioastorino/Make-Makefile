@@ -4,7 +4,9 @@ As I like writing from scratch whatever I can, I am creating a simple shell scri
 #### Please read carefully this document before using the tools provided here.
 
 ### Description
-This project mainly consists of a single script called `makeMakefile.sh`. This script can placed in any folder of your C/C++ project. Once run, the script will look for all the `.c`, `.cpp`, `.h`, and `.hpp` files in the paths specified in the script itself. Based on those files, the script will create and populate the `Makefile` file which you can use to compile your project.
+This project mainly consists of a single script called `makeMakefile.sh`. This script must be placed the `bin` folder of your C/C++ project workspace dir, along with the `variables.sh` and `cleanup.sh` files. Once run, the script will look for all the files in the paths specified by `HEADER_PATHS` and `SRC_PATHS` in `variables.sh`. You can specified multiple paths separated by a space.
+
+The `SRC_EXTENSIONS` array lists all the possible extensions for the implementation files. Similarly, `SRC_EXTENSIONS` is an array of extensions used in the project for header files. Notice that, `.c` files will be compiled using the `CFLAGS` and `gcc` compiler. `.cpp` files are compiled using `CPPFLAGS` and `g++` compiler. Although it is not done here, it is also possible to compile `Objective-C++` code, using the `mm` extension - see my project `PLT` as an example.
 
 ### Directory structure
 The project comes with the following directory tree:
@@ -14,113 +16,58 @@ The project comes with the following directory tree:
 ├── LICENSE
 ├── README.md
 ├── include
-│   ├── MMFCFunctions.h
-│   └── MMFCppFunctions.hpp
+│   ├── common.h
+│   └── c-stuff
+│   |   └── MMFCFunctions.h
+│   └── cpp-stuff
+│       └── MMFCppFunctions.hpp
 ├── bin
+│   └── cleanup.sh
 │   └── makeMakefile.sh
+│   └── variables.sh
 └── src
     ├── c-stuff
     │   └── MMFCFunctions.c
     ├── cpp-stuff
     │   └── MMFCppFunctions.cpp
+    ├── main-test.cpp
     └── main.cpp
 ```
 
-where `.` is the `MMF` folder.
+where `.` is the workspace folder.
 
-## Instructions
-### Test this project
+## Build, run, cleanup
 
-* clone/download this repository for a complete C/C++ project example or
+First, you should create the `Makefile` file by running
 
-Then run
-
-```
+```shell
 $ bin/makeMakefile.sh                    # create the `Makefile`
 ```
+The file will be created in the workspace folder. To compile, execute
 
-to generate the file `Makefile` in the project directory:
-
-```
-.
-├── LICENSE
-├── Makefile     # newly created Makefile
-├── README.md
-...
-```
-You can now compile the downloaded `C`/`C++` project:
-
-```
-$ make SHELL=/bin/bash [OPT=<OPT_LEVEL>] # the downloaded project with optimization level <OPT_LEVEL>
+```shell
+$ make SHELL=/bin/bash [MODE=TEST] [OPT=<OPT_LEVEL>]  # complie
 ```
 
-Here, `<OPT_LEVEL>` indicates the **optimization level** you can optionally choose for compiling the project. Note that `<OPT_LEVEL>` is `0` by default, namely if not specified when you run `make`. The accepted values for it are `0`, `1`, `2`, and `3`. The compiled executable is named accordingly.
+Here, `<OPT_LEVEL>` indicates the **optimization level** you can optionally choose for compiling the project. If `<OPT_LEVEL>` is not specified, `0` will be used. The accepted values for it are `0`, `1`, `2`, and `3`. The compiled executable is named accordingly.
 
-As an example, assuming that `<OPT_LEVEL>` was not specified, the produced result is:
+If `MODE=TEST` is specified, the unit test will be compiled. There are, in fact, two 'main' files. In test mode, the macro `TEST`, defined in `include/common.h`, is set to `1` and the executable will use the `main()` function in `main-test.cpp` as the program entry point. In case `MODE=TEST` is not used, the macro `TEST` is set to `0`, the unit tests are not compiled, and the executable will be created using `main.cpp`, instead.
 
+The name of the executable can be specified using the variable `APP_NAME` in `variables.sh`. The actual file name will be extended with the suffix `-o<OPT_LEVEL>` and located in the `build` folder. Therefore, executing the target can be done by running
+
+```shell
+$ ./build/app_name-o<OPT_LEVEL>       # execute main program
 ```
-.
-├── LICENSE
-├── Makefile
-├── README.md
-├── bin
-│   └── makeMakefile.sh
-├── build                     # build folder
-│   └── objects
-│       ├── MMFCFunctions.o
-│       ├── MMFCppFunctions.o
-│       └── main.o
-├── include
-│   ├── MMFCFunctions.h
-│   └── MMFCppFunctions.hpp
-├── prj-out-0                 # target file
-└── src
-    ├── c-stuff
-    │   └── MMFCFunctions.c
-    ├── cpp-stuff
-    │   └── MMFCppFunctions.cpp
-    └── main.cpp
-```
-Notice that the products of `Makefile` are
 
-1. `prj-out-<OPT_LEVEL>` file, the executable
-2. `build` folder, where built objects and auxiliary files are saved
+or
 
-The target is ready to be executed:
-
-```
-$ ./prj-out-0
-Hello from C++!
-Hello from C!
+```shell
+$ ./build/app_nam-test-o<OPT_LEVEL>   # execute unit test
 ```
 
 To cleanup, run
 
+```shell
+$ bin/cleanup.sh                      # delete Makefile and build folder
 ```
-make clean         # delete Makefile artifacts
-```
 
-
-### Use makeMakefile.sh in your own project
-To build your own `C/C++` project, 
-
-1. Copy `makeMakefile.sh` in your project directory, say `<PATH_TO_SCRIPT>`. It is not necessary choose `<PATH_TO_SCRIPT>` with specific criteria. However, the `bin` folder of your project is recommended. 
-2. Open `makeMakefile.sh` with your favorite text editor and modify the values of following parameters:
-	- `target_name` - the name of the executable to be generated
-	- `target_folder` - folder where the executable is placed
-	- `makefile_folder` - folder where `Makefile` is generated
-	- `build_folder` - folder where object files and auxiliary files are generated
-	- `search_paths` - folder list where project files are located
-3. Run `<PATH_TO_SCRIPT>/makeMakefile.sh` to generate `Makefile` where specified
-4. `cd` to `<makefile_folder>`
-5. Run `make SHELL=/bin/bash [OPT=<OPT_LEVEL>]` to generate the executable
-6. Run `./<target_folder>/<target_name>-<OPT_LEVEL>`
-
-As in the original script, it is recommended to prefix with `$bd/` all the folders listed above to have all paths relative to the folder where `makeMakefile.sh` is located.
-
-#### EXTREMELY IMPORTANT: `build_folder` is erased by the command `make clean` and, therefore, it must not contain subfolders you want to keep! In addition, you must not have have multiple projects main files in the paths specified in `search_paths`.
-
-## Final note
-Most of my C/C++ projects use my `makeMakefile.sh` script. You may want to look at them for further examples.
-
-Any comments are welcomed and, as always, feel free to contact me if you have any questions.

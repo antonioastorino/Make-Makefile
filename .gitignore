@@ -3,3 +3,4 @@ build
 prj-out-*
 Makefile
 .DS_Store
+*.bak
