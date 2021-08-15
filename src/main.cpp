@@ -1,7 +1,7 @@
+#include "common.h"
+#if TEST == 0
 #include "MMFCppFunctions.hpp"
-extern "C" {
 #include "MMFCFunctions.h"
-}
 #include <thread>
 
 int main() {
@@ -12,3 +12,4 @@ int main() {
     t2.join();
     return 0;
 }
+#endif
