@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ue
 BD="$(pwd)/$(dirname $0)/.."
 source "${BD}/bin/variables.sh"
 

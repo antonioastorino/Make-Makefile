@@ -2,7 +2,7 @@ BD="$(pwd)/$(dirname $0)/.."
 source "${BD}/bin/variables.sh"
 if [ -z ${APP_NAME} ]; then exit 1; fi
 
-set -e
+set -ue
 
 pushd "$BD"
 bin/cleanup.sh
