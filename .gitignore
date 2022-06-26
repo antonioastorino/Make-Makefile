@@ -1,6 +1,6 @@
 build
 .clang-format
-prj-out-*
 Makefile
 .DS_Store
 *.bak
+*.swp

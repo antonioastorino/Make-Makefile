@@ -14,5 +14,5 @@ SRC_EXTENSIONS=("cpp" "c")
 INC_EXTENSIONS=("hpp" "h")
 FRAMEWORKS=""
 
-HEADER_PATHS="include"
-SRC_PATHS="src"
+HEADER_PATHS=("include")
+SRC_PATHS=("src")
