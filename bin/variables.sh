@@ -1,15 +1,17 @@
 #!/bin/bash
 APP_NAME="app_name"
 COMMON_HEADER="include/common.h"
-CFLAGS="-Wall -Wextra -g -std=c11"
-CPPFLAGS="-Wall -Wextra -g -std=c++1z"
-MAINFLAGS="-Wall -Wextra -g -std=c++1z"
-GLOBAL_COMPILER="clang"
+COMMON_FLAGS="-Wall -Wextra -g"
+CFLAGS="${COMMON_FLAGS} -std=c11"
+CPPFLAGS="${COMMON_FLAGS} -std=c++1z"
+MAINFLAGS="${COMMON_FLAGS} -std=c++1z"
+COMPILER="clang"
 LIB="-lc++"
 BUILD_DIR="build"
 MAKE_FILE="Makefile"
 MAIN="main"
 MAIN_TEST="main-test"
+SKIP_SRC=""
 SRC_EXTENSIONS=("cpp" "c")
 INC_EXTENSIONS=("hpp" "h")
 FRAMEWORKS=""

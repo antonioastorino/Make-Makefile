@@ -2,9 +2,7 @@
 
 BD="$(pwd)/$(dirname $0)/.."
 source "${BD}/bin/variables.sh"
-if [ -z ${APP_NAME} ]; then exit 1; fi
-
-set -ue
+set -eu
 
 pushd "$BD"
 bin/cleanup.sh
@@ -20,10 +18,12 @@ cat /dev/null >src-name.list   # filename no extension
 
 for EXTENSION in ${SRC_EXTENSIONS[@]}; do
     for f in $(find $SRC_PATHS -name "*.${EXTENSION}"); do
-        FILE_NAME=$(basename $f)
-        echo "$f" >>src-full.list
-        FILE_NO_EXT=${FILE_NAME%.*}
-        echo "${FILE_NO_EXT}" >>src-name.list
+        if ! [ "$f" = "$SKIP_SRC" ]; then
+            FILE_NAME=$(basename $f)
+            echo "$f" >>src-full.list
+            FILE_NO_EXT=${FILE_NAME%.*}
+            echo "${FILE_NO_EXT}" >>src-name.list
+        fi
     done
 done
 
@@ -50,20 +50,20 @@ for LIB_FOUND in ${ALL_LIBS[@]}; do
     thread)
         LIB="$LIB -pthread"
         ;;
+    pthread.h)
+        LIB="$LIB -pthread"
+        ;;
     curl/curl.h)
         LIB="$LIB -lcurl"
         ;;
     zlib.h)
         LIB="$LIB -lz"
         ;;
-    Cocoa/Cocoa.h)
-        FRAMEWORKS="Cocoa ${FRAMEWORKS}"
-        ;;
     esac
 done
 
-pf "\nCPPFLAGS=${CPPFLAGS}"
 pf "\nCFLAGS=${CFLAGS}"
+pf "\nCPPFLAGS=${CPPFLAGS}"
 pf "\nMAINFLAGS=${MAINFLAGS}"
 pf "\nBD=${BD}"
 pf "\nOPT ?= 0"
@@ -76,40 +76,38 @@ while read -r folder; do # created -I list
     pf "\n"
 done <header-sorted-dir.list
 
-# Phony recipies
-pf "\n.PHONY: all setup"
+# Phony recipes
+pf "\n.PHONY: all test"
 pf "\n"
 
 # All
-pf "\nall: setup"
-pf "\n"
-
-pf "\nsetup:"
-pf "\n\t@/bin/rm -rf ${APP_NAME}.app"
+pf "\nall:"
 pf "\n\t@mkdir -p \\"
 pf "\n\t${BUILD_DIR}"
-
-# Set TEST to 1 in case MODE==TEST and run unit tests
-pf "\n\t@if [ \"\$(MODE)\" = \"TEST\" ]; then \\"
-pf "\n\t[ \`grep -c '^#define TEST 0' \"\$(BD)\"/${COMMON_HEADER}\` -eq 1 ] && \\"
-pf "\n\tsed -i.bak 's/^#define TEST 0/#define TEST 1/g' \"\$(BD)\"/${COMMON_HEADER}; \\"
-pf "\n\tmake -C \"\$(BD)\" OPT=\$(OPT) ${BUILD_DIR}/${APP_NAME}-test-o\$(OPT); \\"
-pf "\n\telse \\"
-
-# Reset TEST in case as default behavior.
-pf "\n\t[ \`grep -c '^#define TEST 1' \"\$(BD)\"/${COMMON_HEADER}\` -eq 1 ] && \\"
+pf "\n\t@[ \`grep -c '^#define TEST 1' \"\$(BD)\"/${COMMON_HEADER}\` -eq 1 ] && \\"
 pf "\n\tsed -i.bak 's/^#define TEST 1/#define TEST 0/g' \"\$(BD)\"/${COMMON_HEADER}; \\"
-pf "\n\tmake -C \"\$(BD)\" OPT=\$(OPT) ${BUILD_DIR}/${APP_NAME}-o\$(OPT); \\"
-pf "\n\tfi"
+pf "\n\t[ \`grep -c '^#define MEM_ANALYSIS 1' \"\$(BD)\"/${COMMON_HEADER}\` -eq 1 ] && \\"
+pf "\n\tsed -i.bak 's/^#define MEM_ANALYSIS 1/#define MEM_ANALYSIS 0/g' \"\$(BD)\"/${COMMON_HEADER}; \\"
+pf "\n\tmake -C \"\$(BD)\" OPT=\$(OPT) ${BUILD_DIR}/${APP_NAME}-o\$(OPT);"
+pf "\n"
+
+pf "\ntest:"
+pf "\n\t@mkdir -p \\"
+pf "\n\t${BUILD_DIR}"
+pf "\n\t@[ \`grep -c '^#define TEST 0' \"\$(BD)\"/${COMMON_HEADER}\` -eq 1 ] && \\"
+pf "\n\tsed -i.bak 's/^#define TEST 0/#define TEST 1/g' \"\$(BD)\"/${COMMON_HEADER}; \\"
+pf "\n\t[ \`grep -c '^#define MEM_ANALYSIS 0' \"\$(BD)\"/${COMMON_HEADER}\` -eq 1 ] && \\"
+pf "\n\tsed -i.bak 's/^#define MEM_ANALYSIS 0/#define MEM_ANALYSIS 1/g' \"\$(BD)\"/${COMMON_HEADER}; \\"
+pf "\n\tmake -C \"\$(BD)\" OPT=\$(OPT) ${BUILD_DIR}/${APP_NAME}-test-o\$(OPT);"
 pf "\n"
 
 pf "\n${BUILD_DIR}/${APP_NAME}-o\$(OPT):"
 while read -r FILE_NAME; do
     if [ "${FILE_NAME}" = "${MAIN_TEST}" ]; then continue; fi
     pf "\\"
-    pf "\n\t${BUILD_DIR}/${FILE_NAME}-o\$(OPT).o "
+    pf "\n\t${BUILD_DIR}/$FILE_NAME-o\$(OPT).o "
 done <src-name.list
-pf "\n\t${GLOBAL_COMPILER} \$(LIB) \$(MAINFLAGS) -O\$(OPT) \$(INC) \$(FRAMEWORKS) \$^ -o \$@"
+pf "\n\t${COMPILER} \$(LIB) \$(MAINFLAGS) -O\$(OPT) \$(INC) \$(FRAMEWORKS) \$^ -o \$@"
 pf "\n"
 
 # Test
@@ -119,21 +117,44 @@ while read -r FILE_NAME; do
     pf "\\"
     pf "\n\t${BUILD_DIR}/${FILE_NAME}-o\$(OPT).o "
 done <src-name.list
-pf "\n\t${GLOBAL_COMPILER} \$(LIB) \$(MAINFLAGS) -O\$(OPT) \$(INC) \$(FRAMEWORKS) \$^ -o \$@"
+pf "\n\t${COMPILER} \$(LIB) \$(MAINFLAGS) -O\$(OPT) \$(INC) \$(FRAMEWORKS) \$^ -o \$@"
 pf "\n"
 
 echo "Adding dependency list"
-while read -r FILE_FULL_PATH; do
-    FILE_NAME=$(basename "${FILE_FULL_PATH}")
-    DIR_NAME=$(dirname "${FILE_FULL_PATH}")
+while read -r SRC_FULL_PATH; do
+    FILE_NAME=$(basename "${SRC_FULL_PATH}")
+    DIR_NAME=$(dirname "${SRC_FULL_PATH}")
     FILE_NO_EXT=${FILE_NAME%.*}
     FILE_EXT=${FILE_NAME##*.}
+    if [ "${FILE_EXT}" = "c" ]; then
+        if ! [ "${FILE_NO_EXT}" = "${MAIN}" ] && ! [ "${FILE_NO_EXT}" = "${MAIN_TEST}" ]; then
+            CORR_HEADER=$(find ${BD} -name ${FILE_NO_EXT}.h)
+        else
+            CORR_HEADER=""
+        fi
+    elif [ "${FILE_EXT}" = "cpp" ]; then
+        if ! [ "${FILE_NO_EXT}" = "${MAIN}" ] && ! [ "${FILE_NO_EXT}" = "${MAIN_TEST}" ]; then
+            CORR_HEADER=$(find ${BD} -name ${FILE_NO_EXT}.hpp)
+        else
+            CORR_HEADER=""
+        fi
+    else
+        echo "File extension ${FILE_EXT} not supported"
+    fi
 
-    pf "\n${BUILD_DIR}/${FILE_NO_EXT}-o\$(OPT).o: ${FILE_FULL_PATH} "
+    pf "\n${BUILD_DIR}/${FILE_NO_EXT}-o\$(OPT).o: ${SRC_FULL_PATH} "
 
-    HEADER_FILES=($(egrep "^#include|^#import" "${FILE_FULL_PATH}" | grep -v "<" | awk -F '"' '{print $2}'))
+    HEADER_FILES=($(egrep "^#include|^#import" "${SRC_FULL_PATH}" | grep -v "<" | awk -F '"' '{print $2}'))
+    if ! [ "${CORR_HEADER}" = "" ]; then
+        HEADER_FILES+=($(egrep "^#include|^#import" "${CORR_HEADER}" | grep -v "<" | awk -F '"' '{print $2}'))
+    fi
+    UNIQUE_HEADER_FILES=($(for H in "${HEADER_FILES[@]}"; do echo "${H}"; done | sort -u))
 
-    for HEADER_FILE in ${HEADER_FILES[@]}; do
+    echo "Adding as dependencies header files and corresponding source files found in"
+    echo " - ${SRC_FULL_PATH}"
+    echo " - "${CORR_HEADER#"${BD}/"}
+
+    for HEADER_FILE in ${UNIQUE_HEADER_FILES[@]}; do
         # Some headers are imported with the path
         HEADER_NAME=$(basename "${HEADER_FILE}")
         HEADER_PATH=$(find "${BD}" -name "${HEADER_NAME}")
@@ -146,21 +167,25 @@ while read -r FILE_FULL_PATH; do
             pf "\n\t${BUILD_DIR}/${HEADER_NO_EXT}-o\$(OPT).o "
         fi
     done
-
+    FLAGS=""
     case $FILE_EXT in
     c)
-        pf "\n\tgcc \$(INC) \$(CFLAGS) -O\$(OPT) -c \$< -o \$@\n"
+        FLAGS="CFLAGS"
         ;;
     cpp)
-        pf "\n\tg++ \$(INC) \$(CPPFLAGS) -O\$(OPT) -c \$< -o \$@\n"
+        FLAGS="CPPFLAGS"
         ;;
-    mm)
-        pf "\n\tclang \$(INC) \$(OBJCFLAGS) -O\$(OPT) -c \$< -o \$@\n"
+    *)
+        echo "Unsupported file extension"
+        exit 1
         ;;
     esac
+    pf "\n\t${COMPILER} -O\$(OPT) \$(${FLAGS}) \$(INC) -c \$< -o \$@\n"
     pf "\n"
 done <src-full.list
 
 rm *.list
 
 popd
+
+echo "Done"
