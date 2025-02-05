@@ -5,11 +5,10 @@
 extern "C"
 {
 #endif
-    void helloFromC();
-
+    void helloFromC(void);
 
 #if TEST == 1
-void test_from_c();
+    void test_from_c(void);
 #endif
 
 #ifdef __cplusplus
